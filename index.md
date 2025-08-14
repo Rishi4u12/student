@@ -4,7 +4,7 @@ title: I'm [Your Full Name]
 hide: true
 ---
 
-Hi! My name is 🐤 John C Mortensen
+Hi! My name is 😀 Rishabh Jha
 
 ### Development Environment
 
