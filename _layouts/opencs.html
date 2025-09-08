@@ -1,0 +1,37 @@
+---
+layout: base
+---
+
+<style>
+  html, body { height: 100%; margin: 0; }
+  html, body, main, .page-content, .site-content, .wrapper, .post, article {
+    background: transparent !important;
+  }
+  .page-content { margin: 0; padding: 0; }
+  /* Ensure the header sits above the canvas */
+  .site-header { position: relative; z-index: 1000; }
+  /* Make the canvas fill the viewport */
+  #world {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  z-index: 500 !important; /* above content, below header */
+  pointer-events: none;  /* let header/links remain clickable */
+  }
+</style>
+
+<script>
+  // Ensure body background is transparent in case themes set it
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.style.background = 'transparent';
+  });
+</script>
+
+<main class="page-content" aria-label="Content">
+  {{ content }}
+  
+  <!-- Optional: add a small accessibility note for keyboard users -->
+  <span aria-hidden="true" style="position:absolute;left:-9999px;">Background animation canvas</span>
+</main>
