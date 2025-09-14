@@ -1,14 +1,13 @@
 ---
----
-layout: blogs
+layout: blogs 
 title: Blogs
-description: CSP setup journey, tooling, workflow, and early reflections.
 search_exclude: true
 permalink: /blogs/
 ---
+
 # My CSP Setup Journey
 
-Welcome to my Blogs page. 
+Welcome to my Blogs page. This is a clean, static (non‑animated) write‑up of my early CSP setup and progress.
 
 ## 🖥️ Getting VS Code Ready
 Installed VS Code (enabled PATH + context menu options) and verified tooling:
@@ -40,6 +39,11 @@ Practiced branching, syncing upstream, and resolving merge conflicts. Keeping th
 Ran and committed notebooks with outputs preserved so they render correctly on GitHub Pages. Experimented with adding custom content (like jokes) to verify formatting.
 
 ## ✅ Accomplishments (Snapshot)
+- Verified Python + VS Code toolchain
+- Managed multiple repos (clone, fork, pull, merge)
+- Established virtual environment discipline
+- Ensured notebooks render with outputs
+- Improved Git workflow confidence
 
 ## 🌟 Reflection
 Early repetition (and a few retries) built troubleshooting habits. Peer help accelerated learning and confidence working across different environments.
@@ -53,4 +57,5 @@ Early repetition (and a few retries) built troubleshooting habits. Peer help acc
 | Notebook Practice | Ran & exported Jupyter notebooks |
 | Visual Tweaks | Edited background and layout elements |
 
+---
 _Last updated: {{ site.time | date: '%Y-%m-%d' }}_

@@ -27,7 +27,7 @@ permalink: /background
   spriteImg.src = "{{ page.sprite | relative_url }}";
 
   class GameWorld {
-    static gameSpeed = 5;
+    static gameSpeed = 100;
     constructor(backgroundImg, spriteImg){
       this.canvas = canvas;
       this.ctx = ctx;
