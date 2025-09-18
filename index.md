@@ -1,10 +1,10 @@
 ---
 layout: base
-title: I'm [Your Full Name]
+title: "I'm Rishabh Jha"
 hide: true
 ---
 
-Hi! My name is [Your Full Name]
+Hi! My name is 😀 Rishabh Jha
 
 ### Development Environment
 
@@ -33,13 +33,13 @@ Hi! My name is [Your Full Name]
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;">
     <a href="{{site.baseurl}}/snake" style="text-decoration: none;">
-        <div style="background-color: #00FF00; color: black; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
-            Snake Game
+        <div style="font-size: 24px;">
+            🐍
         </div>
     </a>
     <a href="{{site.baseurl}}/turtle" style="text-decoration: none;">
-        <div style="background-color: #FF0000; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
-            Turtle
+        <div style="font-size: 24px;">
+            🐢
         </div>
     </a>
 </div>
