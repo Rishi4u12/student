@@ -2,6 +2,12 @@
 PORT ?= 4600
 REPO_NAME ?= student
 LOG_FILE = /tmp/jekyll$(PORT).log
+HOST ?= 0.0.0.0
+# Localhost URL (works when Windows<->WSL localhost forwarding is enabled)
+URL = http://localhost:$(PORT)/$(REPO_NAME)/
+# Compute WSL IPv4 address (first non-loopback address); fallback to 127.0.0.1 if not found
+WSL_IP := $(shell ip -4 addr 2>/dev/null | awk '/inet / && $$NF!="lo" {print $$2}' | cut -d/ -f1 | head -n1)
+WINURL = http://$(if $(WSL_IP),$(WSL_IP),127.0.0.1):$(PORT)/$(REPO_NAME)/
 
 SHELL = /bin/bash -c
 .SHELLFLAGS = -e # Exceptions will stop make, works on MacOS
@@ -27,7 +33,7 @@ default: server
 	@# tail and awk work together to extract Jekyll regeneration messages
 	@# When a _notebook is detected in the log, call make convert in the background
 	@# Note: We use the "if ($$0 ~ /_notebooks\/.*\.ipynb/) { system(\"make convert &\") }" to call make convert
-	@(tail -f $(LOG_FILE) | awk '/Server address: http:\/\/127.0.0.1:$(PORT)\/$(REPO_NAME)\// { serverReady=1 } \
+	@(tail -f $(LOG_FILE) | awk '/Server address: http:\/\/.*:$(PORT)\/$(REPO_NAME)\// { serverReady=1 } \
 	serverReady && /^ *Regenerating:/ { regenerate=1 } \
 	regenerate { \
 		if (/^[[:blank:]]*$$/) { regenerate=0 } \
@@ -59,7 +65,7 @@ csp: cspserver
 	@# tail and awk work together to extract Jekyll regeneration messages
 	@# When a _notebook is detected in the log, call make convert in the background
 	@# Note: We use the "if ($$0 ~ /_notebooks\/.*\.ipynb/) { system(\"make convert &\") }" to call make convert
-	@(tail -f $(LOG_FILE) | awk '/Server address: http:\/\/127.0.0.1:$(PORT)\/$(REPO_NAME)\// { serverReady=1 } \
+	@(tail -f $(LOG_FILE) | awk '/Server address: http:\/\/.*:$(PORT)\/$(REPO_NAME)\// { serverReady=1 } \
 	serverReady && /^ *Regenerating:/ { regenerate=1 } \
 	regenerate { \
 		if (/^[[:blank:]]*$$/) { regenerate=0 } \
@@ -89,14 +95,14 @@ csp: cspserver
 # Start the local web server
 server: stop convert
 	@echo "Starting server..."
-	@@nohup bundle exec jekyll serve -H 127.0.0.1 -P $(PORT) > $(LOG_FILE) 2>&1 & \
+	@@nohup bundle exec jekyll serve -H $(HOST) -P $(PORT) > $(LOG_FILE) 2>&1 & \
 		PID=$$!; \
 		echo "Server PID: $$PID"
 	@@until [ -f $(LOG_FILE) ]; do sleep 1; done
 
 cspserver: stop cspconvert
 	@echo "Starting server..."
-	@@nohup bundle exec jekyll serve -H 127.0.0.1 -P $(PORT) > $(LOG_FILE) 2>&1 & \
+	@@nohup bundle exec jekyll serve -H $(HOST) -P $(PORT) > $(LOG_FILE) 2>&1 & \
 		PID=$$!; \
 		echo "Server PID: $$PID"
 	@@until [ -f $(LOG_FILE) ]; do sleep 1; done
@@ -150,3 +156,31 @@ refresh:
 	@make stop
 	@make clean
 	@make
+
+# Print the local URL to access the site
+url:
+	@echo $(URL)
+	@echo "WSL IP URL: $(WINURL)"
+
+# Open the local URL using a platform-appropriate opener (WSL/desktop Linux)
+open:
+	@echo "Opening $(WINURL)"
+	@if command -v wslview >/dev/null 2>&1; then \
+		wslview "$(WINURL)"; \
+	elif command -v xdg-open >/dev/null 2>&1; then \
+		xdg-open "$(WINURL)" >/dev/null 2>&1 || true; \
+	else \
+		echo "Please open $(WINURL) in your browser."; \
+	fi
+
+# Explicit targets for Windows/WSL users
+winurl:
+	@echo $(WINURL)
+
+winopen:
+	@echo "Opening $(WINURL)"
+	@if command -v wslview >/dev/null 2>&1; then \
+		wslview "$(WINURL)"; \
+	else \
+		echo "Install wslu (wslview) or open manually: $(WINURL)"; \
+	fi
