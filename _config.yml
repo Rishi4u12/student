@@ -20,3 +20,13 @@ header_pages:
   - navigation/search.md
   - navigation/about.md
   - navigation/logintoolkit.md
+exclude:
+  - node_modules
+  - .venv
+  - vendor
+  - tmp
+  - log
+  - logs
+  - .sass-cache
+  - .jekyll-cache
+  - _site

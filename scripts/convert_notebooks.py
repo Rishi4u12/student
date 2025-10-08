@@ -44,6 +44,11 @@ def extract_front_matter(notebook_file, cell):
 
 def get_relative_output_path(notebook_file):
     relative_path = os.path.relpath(notebook_file, notebook_directory)
+    # If the path is nested like "_notebooks/…" relative to the notebooks root,
+    # strip the duplicated leading segment so we don't emit to _posts/_notebooks/…
+    prefix = "_notebooks" + os.sep
+    if relative_path.startswith(prefix):
+        relative_path = relative_path[len(prefix):]
 
     markdown_filename = relative_path.replace(".ipynb", "_IPYNB_2_.md")
 
@@ -56,22 +61,21 @@ def ensure_directory_exists(path):
 
 # Function to convert the notebook to Markdown with front matter
 def convert_notebook_to_markdown_with_front_matter(notebook_file):
-    with open(notebook_file, "r", encoding="utf-8") as file:
+    # Be tolerant of invalid surrogate pairs in notebook sources
+    with open(notebook_file, "r", encoding="utf-8", errors="replace") as file:
         notebook = nbformat.read(file, as_version=nbformat.NO_CONVERT)
         front_matter = extract_front_matter(notebook_file, notebook.cells[0])
         notebook.cells.pop(0)
         process_mermaid_cells(notebook)
         exporter = MarkdownExporter()
         markdown, _ = exporter.from_notebook_node(notebook)
-        front_matter_content = (
-            "---\n"
-            + "\n".join(f"{key}: {value}" for key, value in front_matter.items())
-            + "\n---\n\n"
-        )
+        # Dump YAML safely and preserve Unicode
+        front_matter_yaml = yaml.safe_dump(front_matter or {}, sort_keys=False, allow_unicode=True)
+        front_matter_content = f"---\n{front_matter_yaml}---\n\n"
         markdown_with_front_matter = front_matter_content + markdown
         destination_path = get_relative_output_path(notebook_file)
         ensure_directory_exists(destination_path)
-        with open(destination_path, "w", encoding="utf-8") as file:
+        with open(destination_path, "w", encoding="utf-8", errors="replace") as file:
             file.write(markdown_with_front_matter)
 
 
