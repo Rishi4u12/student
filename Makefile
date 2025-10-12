@@ -13,7 +13,7 @@ SHELL = /bin/bash -c
 .SHELLFLAGS = -e # Exceptions will stop make, works on MacOS
 
 # Phony Targets, makefile housekeeping for below definitions
-.PHONY: default server issues convert clean stop
+.PHONY: default server csp cspserver issues convert convert-one clean stop reload refresh url open winurl winopen
 
 # List all .ipynb files in the _notebooks directory
 NOTEBOOK_FILES := $(shell find _notebooks -name '*.ipynb' 2>/dev/null)
@@ -24,24 +24,10 @@ DESTINATION_DIRECTORY = _posts
 MARKDOWN_FILES := $(patsubst _notebooks/%.ipynb,$(DESTINATION_DIRECTORY)/%_IPYNB_2_.md,$(NOTEBOOK_FILES))
 CSP_MARKDOWN_FILES := $(patsubst _notebooks/CSP/%.ipynb,$(DESTINATION_DIRECTORY)/%_IPYNB_2_.md,$(CSP_NOTEBOOK_FILES))
 
-# Call server, then verify and start logging
-# ...
-
-# Call server, then verify and start logging
 default: server
 	@echo "Terminal logging starting, watching server..."
-	@# tail and awk work together to extract Jekyll regeneration messages
-	@# When a _notebook is detected in the log, call make convert in the background
-	@# Note: We use the "if ($$0 ~ /_notebooks\/.*\.ipynb/) { system(\"make convert &\") }" to call make convert
-	@(tail -f $(LOG_FILE) | awk '/Server address: http:\/\/.*:$(PORT)\/$(REPO_NAME)\// { serverReady=1 } \
-	serverReady && /^ *Regenerating:/ { regenerate=1 } \
-	regenerate { \
-		if (/^[[:blank:]]*$$/) { regenerate=0 } \
-		else { \
-			print; \
-			if ($$0 ~ /_notebooks\/.*\.ipynb/) { system("make convert &") } \
-		} \
-	}') 2>/dev/null &
+	@# Launch watcher to trigger per-file conversion when notebooks change
+	@nohup bash scripts/watch_jekyll_log.sh $(LOG_FILE) '_notebooks/.*\.ipynb' >/dev/null 2>&1 &
 	@# start an infinite loop with timeout to check log status
 	@for ((COUNTER = 0; ; COUNTER++)); do \
 		if grep -q "Server address:" $(LOG_FILE); then \
@@ -62,18 +48,7 @@ default: server
 csp: cspserver
 	@echo "ONLY COMPILED CSP CONTENT"
 	@echo "Terminal logging starting, watching server..."
-	@# tail and awk work together to extract Jekyll regeneration messages
-	@# When a _notebook is detected in the log, call make convert in the background
-	@# Note: We use the "if ($$0 ~ /_notebooks\/.*\.ipynb/) { system(\"make convert &\") }" to call make convert
-	@(tail -f $(LOG_FILE) | awk '/Server address: http:\/\/.*:$(PORT)\/$(REPO_NAME)\// { serverReady=1 } \
-	serverReady && /^ *Regenerating:/ { regenerate=1 } \
-	regenerate { \
-		if (/^[[:blank:]]*$$/) { regenerate=0 } \
-		else { \
-			print; \
-			if ($$0 ~ /_notebooks\/CSP\/.*\.ipynb/) { system("make convert &") } \
-		} \
-	}') 2>/dev/null &
+	@nohup bash scripts/watch_jekyll_log.sh $(LOG_FILE) '_notebooks/CSP/.*\.ipynb' >/dev/null 2>&1 &
 	@# start an infinite loop with timeout to check log status
 	@for ((COUNTER = 0; ; COUNTER++)); do \
 		if grep -q "Server address:" $(LOG_FILE); then \
@@ -93,33 +68,34 @@ csp: cspserver
 
 
 # Start the local web server
-server: stop convert
+server: stop
 	@echo "Starting server..."
-	@@nohup bundle exec jekyll serve -H $(HOST) -P $(PORT) > $(LOG_FILE) 2>&1 & \
+	@nohup bundle exec jekyll serve -H $(HOST) -P $(PORT) > $(LOG_FILE) 2>&1 & \
 		PID=$$!; \
 		echo "Server PID: $$PID"
-	@@until [ -f $(LOG_FILE) ]; do sleep 1; done
+	@until [ -f $(LOG_FILE) ]; do sleep 1; done
 
-cspserver: stop cspconvert
+cspserver: stop
 	@echo "Starting server..."
-	@@nohup bundle exec jekyll serve -H $(HOST) -P $(PORT) > $(LOG_FILE) 2>&1 & \
+	@nohup bundle exec jekyll serve -H $(HOST) -P $(PORT) > $(LOG_FILE) 2>&1 & \
 		PID=$$!; \
 		echo "Server PID: $$PID"
-	@@until [ -f $(LOG_FILE) ]; do sleep 1; done
+	@until [ -f $(LOG_FILE) ]; do sleep 1; done
 
-# Convert .ipynb files to Markdown with front matter
+# Convert .ipynb files to Markdown with front matter (explicit use only)
 convert: $(MARKDOWN_FILES)
 cspconvert: $(CSP_MARKDOWN_FILES)
 
-# Convert .ipynb files to Markdown with front matter, preserving directory structure
+# Convert .ipynb files to Markdown with front matter, preserving directory structure (single-file)
 $(DESTINATION_DIRECTORY)/%_IPYNB_2_.md: _notebooks/%.ipynb
-	@mkdir -p $(@D)
-	@python3 -c "from scripts.convert_notebooks import convert_notebooks; convert_notebooks()"
-
-$(DESTINATION_DIRECTORY)/%_IPYNB_2_.md: _notebooks/CSP/%.ipynb
 	@echo "Converting source $< to destination $@"
 	@mkdir -p $(@D)
 	@python3 -c 'import sys; from scripts.convert_notebooks import convert_single_notebook; convert_single_notebook(sys.argv[1])' "$<"
+
+# Convert one notebook on demand: make convert-one ONE_FILE=path/to/notebook.ipynb
+convert-one:
+	@if [ -z "$(ONE_FILE)" ]; then echo "Usage: make convert-one ONE_FILE=path/to/notebook.ipynb"; exit 1; fi
+	@python3 -c 'import sys; from scripts.convert_notebooks import convert_single_notebook; convert_single_notebook(sys.argv[1])' "$(ONE_FILE)"
 
 # Clean up project derived files, to avoid run issues stop is dependency
 clean: stop

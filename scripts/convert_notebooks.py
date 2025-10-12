@@ -1,6 +1,4 @@
 import glob
-from nbconvert import MarkdownExporter
-from nbconvert.utils.exceptions import ConversionException
 import os
 import nbformat
 import yaml
@@ -67,6 +65,16 @@ def convert_notebook_to_markdown_with_front_matter(notebook_file):
         front_matter = extract_front_matter(notebook_file, notebook.cells[0])
         notebook.cells.pop(0)
         process_mermaid_cells(notebook)
+        # Lazy import nbconvert; if unavailable, print a hint and raise to caller
+        try:
+            from nbconvert import MarkdownExporter  # type: ignore
+        except ImportError:
+            print(
+                "Notebook conversion requires nbconvert. Skipping conversion for: "
+                + notebook_file
+            )
+            print("Tip: activate your venv and run 'pip install -r requirements.txt'.")
+            raise
         exporter = MarkdownExporter()
         markdown, _ = exporter.from_notebook_node(notebook)
         # Dump YAML safely and preserve Unicode
@@ -83,7 +91,7 @@ def convert_notebook_to_markdown_with_front_matter(notebook_file):
 def convert_single_notebook(notebook_file):
     try:
         convert_notebook_to_markdown_with_front_matter(notebook_file)
-    except ConversionException as e:
+    except Exception as e:
         print(f"Conversion error for {notebook_file}: {str(e)}")
         error_cleanup(notebook_file)
         sys.exit(1)
@@ -92,10 +100,7 @@ def convert_single_notebook(notebook_file):
 def process_notebook(notebook_file):
     try:
         convert_single_notebook(notebook_file)
-    except ConversionException as e:
-        print(f"Conversion error for {notebook_file}: {str(e)}")
-        error_cleanup(notebook_file)
-    except Exception as e:
+    except Exception:
         print(f"Unexpected error for {notebook_file}: {traceback.format_exc()}")
 
 
