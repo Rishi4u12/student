@@ -3,5 +3,6 @@
   {% if include.caption %}
   <figcaption class="image-caption">{{ include.caption }}</figcaption>
   {% endif %}
+  
 </figure>
 
