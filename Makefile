@@ -34,7 +34,7 @@ default: server
 			echo "Server started in $$COUNTER seconds"; \
 			break; \
 		fi; \
-		if [ $$COUNTER -eq 60 ]; then \
+		if [ $$COUNTER -eq 180 ]; then \
 			echo "Server timed out after $$COUNTER seconds."; \
 			echo "Review errors from $(LOG_FILE)."; \
 			cat $(LOG_FILE); \
@@ -55,7 +55,7 @@ csp: cspserver
 			echo "Server started in $$COUNTER seconds"; \
 			break; \
 		fi; \
-		if [ $$COUNTER -eq 60 ]; then \
+		if [ $$COUNTER -eq 180 ]; then \
 			echo "Server timed out after $$COUNTER seconds."; \
 			echo "Review errors from $(LOG_FILE)."; \
 			cat $(LOG_FILE); \
@@ -115,10 +115,10 @@ clean: stop
 stop:
 	@echo "Stopping server..."
 	@# kills process running on port $(PORT)
-	@@lsof -ti :$(PORT) | xargs kill >/dev/null 2>&1 || true
+	@lsof -ti :$(PORT) | xargs kill >/dev/null 2>&1 || true
 	@echo "Stopping logging process..."
 	@# kills previously running logging processes
-	@@ps aux | awk -v log_file=$(LOG_FILE) '$$0 ~ "tail -f " log_file { print $$2 }' | xargs kill >/dev/null 2>&1 || true
+	@ps aux | awk -v log_file=$(LOG_FILE) '$$0 ~ "scripts/watch_jekyll_log.sh " log_file { print $$2 }' | xargs kill >/dev/null 2>&1 || true
 	@# removes log
 	@rm -f $(LOG_FILE)
 
