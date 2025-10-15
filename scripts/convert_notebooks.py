@@ -29,14 +29,27 @@ def error_cleanup(notebook_file):
 def extract_front_matter(notebook_file, cell):
     front_matter = {}
     source = cell.get("source", "")
-
-    if source.startswith("---"):
+    # Normalize to string (nbformat may store source as list of lines)
+    if isinstance(source, list):
+        source = "".join(source)
+    if not isinstance(source, str):
+        return front_matter
+    src = source.strip()
+    if src.startswith("---"):
         try:
-            front_matter = yaml.safe_load(source.split("---", 2)[1])
+            # Expect '---\nYAML\n---' — split on first two occurrences
+            parts = src.split("---", 2)
+            if len(parts) >= 2:
+                yaml_block = parts[1]
+                fm = yaml.safe_load(yaml_block) or {}
+                # Ensure fm is a dict
+                if isinstance(fm, dict):
+                    front_matter = fm
         except yaml.YAMLError as e:
-            print(f"Error parsing YAML front matter: {e}")
+            print(f"Error parsing YAML front matter in {notebook_file}: {e}")
             error_cleanup(notebook_file)
-            sys.exit(1)
+            # Do not stop whole process; return empty FM
+            return {}
     return front_matter
 
 
@@ -92,9 +105,10 @@ def convert_single_notebook(notebook_file):
     try:
         convert_notebook_to_markdown_with_front_matter(notebook_file)
     except Exception as e:
+        # Be resilient: log the error, clean up any partial output, and continue
         print(f"Conversion error for {notebook_file}: {str(e)}")
         error_cleanup(notebook_file)
-        sys.exit(1)
+        return
 
 
 def process_notebook(notebook_file):
