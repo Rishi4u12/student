@@ -1,0 +1,63 @@
+{%- comment -%}
+Minimal Tailwind-style tabs include
+Usage:
+  {% include tailwind/tabs.html tabs=tabsVar %}
+Where tabsVar is an array of maps: [{ id: 'tab1', title: 'Tab 1', content: '<p>HTML</p>'}, ...]
+If not provided, will fall back to scanning for children in the calling document (no-op fallback).
+{%- endcomment -%}
+
+{%- assign _tabs = include.tabs | default: site.empty_array -%}
+<div class="tw-tabs" data-tabs>
+  <div class="tw-tablist" role="tablist" aria-label="Tabs" style="display:flex; gap:.5rem; flex-wrap:wrap;">
+    {%- if _tabs and _tabs.size > 0 -%}
+      {%- for t in _tabs -%}
+        <button class="tw-tab" role="tab" aria-selected="{{ forloop.first }}" aria-controls="{{ t.id }}" id="tab-{{ t.id }}"
+                style="padding:.4rem .8rem; border:1px solid rgba(0,0,0,.15); border-radius:.5rem; background:{{ forloop.first | ternary: '#1f2937', '#fff' }}; color:{{ forloop.first | ternary: '#fff', '#111827' }};">
+          {{ t.title }}
+        </button>
+      {%- endfor -%}
+    {%- else -%}
+      <button class="tw-tab" role="tab" aria-selected="true" aria-controls="fallback-panel" id="tab-fallback"
+              style="padding:.4rem .8rem; border:1px solid rgba(0,0,0,.15); border-radius:.5rem; background:#1f2937; color:#fff;">
+        Tab
+      </button>
+    {%- endif -%}
+  </div>
+
+  <div class="tw-panels" style="margin-top:.75rem;">
+    {%- if _tabs and _tabs.size > 0 -%}
+      {%- for t in _tabs -%}
+        <div id="{{ t.id }}" role="tabpanel" aria-labelledby="tab-{{ t.id }}" style="display:{{ forloop.first | ternary: 'block','none' }};">
+          {{ t.content }}
+        </div>
+      {%- endfor -%}
+    {%- else -%}
+      <div id="fallback-panel" role="tabpanel" aria-labelledby="tab-fallback" style="display:block;">
+        <p>Add content via include parameter <code>tabs</code>.</p>
+      </div>
+    {%- endif -%}
+  </div>
+
+  <script>
+  (function(){
+    try{
+      var root = document.currentScript && document.currentScript.parentElement ? document.currentScript.parentElement : null;
+      while(root && !root.querySelector){ root = root.parentElement; }
+      root = root && root.closest ? root.closest('[data-tabs]') : null;
+      if(!root) return;
+      var tabs = root.querySelectorAll('.tw-tab');
+      var panels = root.querySelectorAll('[role="tabpanel"]');
+      function activate(i){
+        for(var j=0;j<tabs.length;j++){
+          var on = j===i;
+          tabs[j].setAttribute('aria-selected', on);
+          tabs[j].style.background = on ? '#1f2937' : '#fff';
+          tabs[j].style.color = on ? '#fff' : '#111827';
+          if(panels[j]) panels[j].style.display = on ? 'block' : 'none';
+        }
+      }
+      tabs.forEach(function(btn, i){ btn.addEventListener('click', function(){ activate(i); }); });
+    }catch(e){ /* no-op in safe mode */ }
+  })();
+  </script>
+</div>
