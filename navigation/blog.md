@@ -5,7 +5,6 @@ search_exclude: true   # Prevent indexing in site search
 permalink: /blogs/     # Final URL -> /student/blogs/ (baseurl prefix added at build)
 ---
 
-<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
