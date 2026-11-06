@@ -37,6 +37,10 @@ jobs:
         run: |
           gem install bundler
           bundle install
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' # The conversion script's workers fail under Python 3.14
       - name: Install Python dependencies
         run: |
           python -m venv venv  # Create virtual environment
